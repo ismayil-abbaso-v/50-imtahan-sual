@@ -7,8 +7,17 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Test Qarışdırıcı və İmtahan Rejimi", page_icon="📄")
 
-st.markright("[📸 Instagram səhifəmizə keçid](https://www.instagram.com/lsmayil_abbaso_v)", unsafe_allow_html=True)
-
+st.markdown(
+    """
+    <div style="text-align: right;">
+        <a href="https://www.instagram.com/lsmayil_abbaso_v" 
+           style="text-decoration: none; color: black; font-size: 20px;">
+            📸 Instagram
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 # --- Riyazi ifadələri də daxil oxumaq üçün paragraph'ın tam mətni ---
 def full_text(paragraph):
     return ''.join(run.text for run in paragraph.runs).strip()
