@@ -29,10 +29,7 @@ st.markdown(
         Instagram
     </a>
     """,
-    unsafe_allow_html=True,
-)
-
-st.title("Sənin əsas kontentin burada")
+    unsafe_allow_html=True,)
 
 # --- Riyazi ifadələri də daxil oxumaq üçün paragraph'ın tam mətni ---
 def full_text(paragraph):
