@@ -28,7 +28,7 @@ st.sidebar.markdown(f"⏳ Qalan vaxt: **{mins:02d}:{secs:02d}**")
 if remaining == 0:
     st.session_state.exam_finished = True
 
-uploaded_file = st.file_uploader("Sualları yüklə (.txt formatında)", type=["txt"])
+uploaded_file = st.file_uploader("Sualları yüklə (.docx formatında)", type=["docx"])
 
 if uploaded_file and not st.session_state.questions:
     content = uploaded_file.read().decode("utf-8").split("\n")
