@@ -7,35 +7,6 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Test Qarışdırıcı və İmtahan Rejimi", page_icon="📄")
 
-st.markdown("""
-<style>
-.top-right {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 16px;
-    color: black !important;
-    text-decoration: none;
-    z-index: 9999;
-}
-.top-right img {
-    width: 24px;
-    height: 24px;
-}
-.top-right:hover {
-    text-decoration: underline;
-}
-</style>
-
-<a href="https://www.instagram.com/lsmayil_abbaso_v" target="_blank" class="top-right">
-    <img src="https://th.bing.com/th/id/OIP.OEaRwfnze2S5ix1MwE9i5QHaG3?rs=1&pid=ImgDetMain" alt="Instagram" />
-    Instagram
-</a>
-""", unsafe_allow_html=True)
-
 # --- Riyazi ifadələri də daxil oxumaq üçün paragraph'ın tam mətni ---
 def full_text(paragraph):
     return ''.join(run.text for run in paragraph.runs).strip()
