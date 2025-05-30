@@ -5,31 +5,9 @@ from docx import Document
 from io import BytesIO
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Test", page_icon="📄")
+st.set_page_config(page_title="Test Qarışdırıcı və İmtahan Rejimi", page_icon="📄")
 
-# Üst sağ küncdə Instagram linki üçün HTML + CSS
-st.markdown(
-    """
-    <style>
-    .top-right-link {
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        font-size: 14px;
-        font-weight: normal;
-        color: black;
-        text-decoration: none;
-        z-index: 1000;
-    }
-    .top-right-link:hover {
-        text-decoration: underline;
-    }
-    </style>
-    <a href="https://www.instagram.com/lsmayil_abbaso_v" target="_blank" class="top-right-link">
-        Instagram
-    </a>
-    """,
-    unsafe_allow_html=True,)
+st.markdown("[<img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" /> Instagram](https://www.instagram.com/lsmayil_abbaso_v)", unsafe_allow_html=True)
 
 # --- Riyazi ifadələri də daxil oxumaq üçün paragraph'ın tam mətni ---
 def full_text(paragraph):
