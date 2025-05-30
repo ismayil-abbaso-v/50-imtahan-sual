@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Test Qarışdırıcı və İmtahan Rejimi", page_icon="📄")
 
-st.markdown("[<img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" /> Instagram](https://www.instagram.com/lsmayil_abbaso_v)", unsafe_allow_html=True)
+st.markdown("[📸 Instagram](https://www.instagram.com/lsmayil_abbaso_v)", unsafe_allow_html=True)
 
 # --- Riyazi ifadələri də daxil oxumaq üçün paragraph'ın tam mətni ---
 def full_text(paragraph):
