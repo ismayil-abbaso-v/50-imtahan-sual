@@ -5,20 +5,19 @@ from docx import Document
 from io import BytesIO
 from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Test Qarışdırıcı və İmtahan Rejimi", page_icon="📄")
+st.set_page_config(page_title="Test", page_icon="📄")
 
-# Instagram linki yuxarı sağ küncdə ikon və yazı ilə
 st.markdown("""
 <style>
 .top-right {
     position: fixed;
     top: 10px;
     right: 10px;
-    font-size: 14px;
-    color: black;
     display: flex;
     align-items: center;
     gap: 6px;
+    font-size: 16px;
+    color: black !important;
     text-decoration: none;
     z-index: 9999;
 }
@@ -30,11 +29,15 @@ st.markdown("""
     text-decoration: underline;
 }
 </style>
+
 <a href="https://www.instagram.com/lsmayil_abbaso_v" target="_blank" class="top-right">
     <img src="https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg" alt="Instagram" />
     Instagram
 </a>
 """, unsafe_allow_html=True)
+
+st.title("Test Səhifəsi")
+st.write("Burada sənin əsas proqramın işləyəcək.")
 
 # --- Riyazi ifadələri də daxil oxumaq üçün paragraph'ın tam mətni ---
 def full_text(paragraph):
