@@ -1,96 +1,71 @@
-elif menu == "📝 İmtahan Rejimi":
-    st.title("📝 Öz İmtahanını Yoxla")
-    uploaded_file = st.file_uploader("📤 Word (.docx) faylını yüklə", type="docx")
-    mode = st.radio("📌 Rejim seç:", ["50 random sual", "Bütün suallar"], index=0)
+import streamlit as st import docx import random from io import BytesIO
 
-    if uploaded_file:
-        all_questions = parse_docx(uploaded_file)
-        if not all_questions:
-            st.error("Sual tapılmadı.")
+st.set_page_config(page_title="Test Generator", layout="wide") st.title("📘 Test Generator")
+
+menu = ["📤 Variantları Qarışdır", "📝 İmtahan Hazırla"] choice = st.sidebar.radio("Seçim edin", menu)
+
+def parse_docx(file): doc = docx.Document(file) questions = [] for para in doc.paragraphs: if para.text.strip().startswith("Sual") and any(opt in para.text for opt in ["A)", "B)", "C)", "D)"]): questions.append(para.text.strip()) return questions
+
+def shuffle_variants(question): parts = question.split("A)") if len(parts) < 2: return question, "" q_text = parts[0].strip() variants_part = "A)" + parts[1] variants = variants_part.split("\n") if "\n" in variants_part else [v.strip() for v in variants_part.split(" ") if ")" in v]
+
+if len(variants) < 4:
+    return question, ""
+
+correct = variants[0]
+random.shuffle(variants)
+
+new_q = q_text + "\n" + "\n".join(variants)
+new_answer = "ABCD"[variants.index(correct)]
+return new_q, new_answer
+
+def create_shuffled_docx_and_answers(questions): new_doc = docx.Document() answers = [] for i, q in enumerate(questions, 1): shuffled_q, answer = shuffle_variants(q) new_doc.add_paragraph(f"{i}. {shuffled_q}") answers.append(f"{i}. {answer}") return new_doc, answers
+
+if choice == "📤 Variantları Qarışdır": st.header("📤 Variantları Qarışdır") uploaded_file = st.file_uploader(".docx faylını yükləyin", type=["docx"]) mode = st.radio("Seçim növü", ["50 sual", "Bütün suallar"])
+
+if uploaded_file:
+    suallar = parse_docx(uploaded_file)
+    if len(suallar) < 5:
+        st.error("Faylda kifayət qədər uyğun sual tapılmadı.")
+    else:
+        if mode == "50 sual":
+            secilmis = random.sample(suallar, min(50, len(suallar)))
         else:
-            questions = []
+            st.info(f"Faylda {len(suallar)} sual tapıldı.")
+            col1, col2 = st.columns(2)
+            with col1:
+                start_q = st.number_input("Başlanğıc sual №", min_value=1, max_value=len(suallar), value=1)
+            with col2:
+                end_q = st.number_input("Sonuncu sual №", min_value=start_q, max_value=len(suallar), value=len(suallar))
+            secilmis = suallar[start_q - 1:end_q]
 
-            if mode == "50 random sual":
-                questions = random.sample(all_questions, min(50, len(all_questions)))
+        yeni_doc, cavablar = create_shuffled_docx_and_answers(secilmis)
 
-            elif mode == "Bütün suallar":
-                total_questions = len(all_questions)
-                start_index = st.number_input("Başlanğıc sual nömrəsi", min_value=1, max_value=total_questions, value=1, step=1)
-                end_index = st.number_input("Sonuncu sual nömrəsi", min_value=start_index, max_value=total_questions, value=min(start_index + 49, total_questions), step=1)
-                questions = all_questions[start_index - 1:end_index]
+        output_docx = BytesIO()
+        yeni_doc.save(output_docx)
+        output_docx.seek(0)
 
-            if "started" not in st.session_state:
-                st.session_state.started = False
-                st.session_state.questions = questions
-                st.session_state.current = 0
-                st.session_state.answers = []
-                st.session_state.correct_answers = []
-                st.session_state.start_time = None
-                st.session_state.timer_expired = False
+        output_answers = BytesIO()
+        output_answers.write('\n'.join(cavablar).encode('utf-8'))
+        output_answers.seek(0)
 
-            if not st.session_state.started:
-                if st.button("🚀 İmtahana Başla"):
-                    st.session_state.started = True
-                    st.session_state.start_time = datetime.now()
-                    st.rerun()
+        st.success("✅ Sənədlər hazırdır!")
+        st.download_button("📥 Qarışdırılmış suallar (.docx)", output_docx, "qarisdirilmis_suallar.docx")
+        st.download_button("📥 Cavab açarı (.txt)", output_answers, "cavablar.txt")
 
-            elif st.session_state.started:
-                now = datetime.now()
-                time_left = timedelta(minutes=60) - (now - st.session_state.start_time)
-                if time_left.total_seconds() <= 0:
-                    st.session_state.timer_expired = True
+elif choice == "📝 İmtahan Hazırla": st.header("📝 İmtahan Hazırla") uploaded_file = st.file_uploader(".docx faylını yükləyin", type=["docx"], key="exam") if uploaded_file: suallar = parse_docx(uploaded_file) if len(suallar) < 5: st.error("Faylda kifayət qədər uyğun sual tapılmadı.") else: st.info(f"Faylda {len(suallar)} sual tapıldı.") col1, col2 = st.columns(2) with col1: start_q = st.number_input("Başlanğıc sual №", min_value=1, max_value=len(suallar), value=1, key="start_exam") with col2: end_q = st.number_input("Sonuncu sual №", min_value=start_q, max_value=len(suallar), value=len(suallar), key="end_exam")
 
-                if st.session_state.timer_expired:
-                    st.warning("⏰ Vaxt bitdi! İmtahan başa çatdı.")
-                    st.session_state.current = len(st.session_state.questions)
-                else:
-                    mins, secs = divmod(int(time_left.total_seconds()), 60)
-                    st.info(f"⏳ Qalan vaxt: {mins} dəq {secs} san")
+secilmis = suallar[start_q - 1:end_q]
 
-                idx = st.session_state.current
-                if idx < len(st.session_state.questions):
-                    qtext, options = st.session_state.questions[idx]
-                    correct = options[0]
-                    if f"shuffled_{idx}" not in st.session_state:
-                        shuffled = options[:]
-                        random.shuffle(shuffled)
-                        st.session_state[f"shuffled_{idx}"] = shuffled
-                    else:
-                        shuffled = st.session_state[f"shuffled_{idx}"]
+        yeni_doc, cavablar = create_shuffled_docx_and_answers(secilmis)
 
-                    st.markdown(f"{idx+1}) {qtext}")
-                    selected = st.radio("Variant seç:", shuffled, key=f"answer_{idx}")
+        output_docx = BytesIO()
+        yeni_doc.save(output_docx)
+        output_docx.seek(0)
 
-                    col1, col2, col3 = st.columns(3)
-                    with col1:
-                        if st.button("⬅ Əvvəlki", disabled=idx == 0):
-                            st.session_state.current -= 1
-                            st.rerun()
-                    with col2:
-                        if st.button("🚩 Bitir"):
-                            st.session_state.current = len(st.session_state.questions)
-                            st.rerun()
-                    with col3:
-                        if st.button("➡ Növbəti", disabled=(selected is None)):
-                            if len(st.session_state.answers) <= idx:
-                                st.session_state.answers.append(selected)
-                                st.session_state.correct_answers.append(correct)
-                            else:
-                                st.session_state.answers[idx] = selected
-                                st.session_state.correct_answers[idx] = correct
-                            st.session_state.current += 1
-                            st.rerun()
-                else:
-                    st.success("✅ İmtahan bitdi!")
-                    score = sum(1 for a, b in zip(st.session_state.answers, st.session_state.correct_answers) if a == b)
-                    st.markdown(f"### Nəticə: {score}/{len(st.session_state.questions)} doğru cavab ✅")
+        output_answers = BytesIO()
+        output_answers.write('\n'.join(cavablar).encode('utf-8'))
+        output_answers.seek(0)
 
-                    with st.expander("📋 Detallı nəticə"):
-                        for i, (ua, ca, q) in enumerate(zip(st.session_state.answers, st.session_state.correct_answers, st.session_state.questions)):
-                            status = "✅ Düzgün" if ua == ca else "❌ Səhv"
-                            st.markdown(f"{i+1}) {q[0]}\nSənin cavabın: {ua} — Doğru: {ca} → {status}")
-
-                    if st.button("🔁 Yenidən başla"):
-                        for key in list(st.session_state.keys()):
-                            del st.session_state[key]
-                        st.rerun()
+        st.success("✅ İmtahan sənədləri hazırdır!")
+        st.download_button("📥 İmtahan sualları (.docx)", output_docx, "imtahan_suallari.docx")
+        st.download_button("📥 Cavab açarı (.txt)", output_answers, "imtahan_cavablari.txt")
