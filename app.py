@@ -8,14 +8,9 @@ from datetime import datetime, timedelta
 st.set_page_config(page_title="Test Qarışdırıcı və İmtahan Rejimi", page_icon="📄")
 
 st.markdown(
-    """
-    <div style="text-align: right;">
-        <a href="https://www.instagram.com/lsmayil_abbaso_v" 
-           style="text-decoration: none; color: black; font-size: 20px;">
-            📸 Instagram
-        </a>
-    </div>
-    """,
+    '<p style="text-align:right; font-size:20px; color:black;">'
+    '<a href="https://www.instagram.com/lsmayil_abbaso_v" style="text-decoration:none; color:black;">📸 Instagram</a>'
+    '</p>',
     unsafe_allow_html=True
 )
 # --- Riyazi ifadələri də daxil oxumaq üçün paragraph'ın tam mətni ---
