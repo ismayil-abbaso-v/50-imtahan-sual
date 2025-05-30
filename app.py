@@ -61,7 +61,7 @@ if st.session_state.questions and not st.session_state.exam_finished:
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button(⬅️ Əvvəlki sual", disabled=idx == 0):
+        if st.button("⬅️ Əvvəlki sual", disabled=idx == 0):
             st.session_state.current_question -= 1
     with col2:
         if st.button("➡️ Növbəti sual", disabled=idx == len(st.session_state.questions) - 1):
