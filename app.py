@@ -1,80 +1,117 @@
 import streamlit as st
+import re
 import random
-import time
+from docx import Document
+from datetime import datetime, timedelta
+from streamlit_autorefresh import st_autorefresh
 
+# Sual parsing funksiyası
+def parse_docx(file):
+    doc = Document(file)
+    sual_nusunesi = re.compile(r"^\s*\d+[\.\)]\s+")
+    variant_nusunesi = re.compile(r"^\s*[A-Ea-e]\)\s+(.*)")
+
+    paragraphlar = list(doc.paragraphs)
+    i = 0
+    sual_bloklari = []
+
+    while i < len(paragraphlar):
+        metn = paragraphlar[i].text.strip()
+        if sual_nusunesi.match(metn):
+            sual_metni = sual_nusunesi.sub('', metn)
+            i += 1
+            variantlar = []
+            while i < len(paragraphlar):
+                text = paragraphlar[i].text.strip()
+                uygun = variant_nusunesi.match(text)
+                if uygun:
+                    variantlar.append(uygun.group(1).strip())
+                    i += 1
+                elif text and not sual_nusunesi.match(text) and len(variantlar) < 5:
+                    variantlar.append(text)
+                    i += 1
+                else:
+                    break
+            if len(variantlar) == 5:
+                sual_bloklari.append((sual_metni, variantlar))
+        else:
+            i += 1
+    return sual_bloklari
+
+# Avtomatik yenilənmə (timer üçün)
+st_autorefresh(interval=1000, key="auto_refresh")
+
+# Streamlit başlıq və giriş
 st.set_page_config(page_title="İmtahan Rejimi", page_icon="📝")
+st.title("📝 Öz İmtahanını Yoxla")
 
-st.title("📝 İmtahan Rejimi")
+uploaded_file = st.file_uploader("📤 Word (.docx) faylını yüklə", type="docx")
+mode = st.radio("📌 Rejim seç:", ["50 random sual", "Bütün suallar"], index=0)
 
-if "questions" not in st.session_state:
-    st.session_state.questions = []
-if "current_question" not in st.session_state:
-    st.session_state.current_question = 0
-if "answers" not in st.session_state:
-    st.session_state.answers = {}
-if "shuffled_options" not in st.session_state:
-    st.session_state.shuffled_options = {}
-if "start_time" not in st.session_state:
-    st.session_state.start_time = time.time()
-if "exam_finished" not in st.session_state:
-    st.session_state.exam_finished = False
+if uploaded_file:
+    if "initialized" not in st.session_state:
+        suallar = parse_docx(uploaded_file)
+        if mode == "50 random sual":
+            suallar = random.sample(suallar, min(50, len(suallar)))
 
-# Saatı göstər
-elapsed = int(time.time() - st.session_state.start_time)
-remaining = max(0, 3600 - elapsed)
-mins, secs = divmod(remaining, 60)
-st.sidebar.markdown(f"⏳ Qalan vaxt: **{mins:02d}:{secs:02d}**")
+        st.session_state.suallar = suallar
+        st.session_state.current = 0
+        st.session_state.cavablar = [None] * len(suallar)
+        st.session_state.duzgun = [s[1][0] for s in suallar]
+        st.session_state.shuffled_variants = [random.sample(s[1], len(s[1])) for s in suallar]
+        st.session_state.imtahan_basladi = False
+        st.session_state.start_time = None
+        st.session_state.initialized = True
 
-if remaining == 0:
-    st.session_state.exam_finished = True
+    if not st.session_state.imtahan_basladi:
+        if st.button("🚀 İmtahana Başla"):
+            st.session_state.imtahan_basladi = True
+            st.session_state.start_time = datetime.now()
+    else:
+        total_time = timedelta(hours=1)
+        time_left = total_time - (datetime.now() - st.session_state.start_time)
+        
+        if time_left.total_seconds() <= 0:
+            st.warning("⏰ Vaxt bitdi! İmtahan başa çatdı.")
+            st.session_state.imtahan_basladi = False
+            show_results = True
+        else:
+            st.markdown(f"⏳ **Qalan vaxt:** {str(time_left).split('.')[0]}")
+            idx = st.session_state.current
+            sual_metni, variantlar = st.session_state.suallar[idx]
+            shuffled = st.session_state.shuffled_variants[idx]
 
-uploaded_file = st.file_uploader("Sualları yüklə (.docx formatında)", type=["docx"])
+            st.markdown(f"**{idx+1}) {sual_metni}**")
+            secim = st.radio("Variantı seç:", shuffled, key=f"sual_{idx}", index=shuffled.index(st.session_state.cavablar[idx]) if st.session_state.cavablar[idx] else 0)
 
-if uploaded_file and not st.session_state.questions:
-    content = uploaded_file.read().decode("utf-8").split("\n")
-    for i in range(0, len(content), 6):
-        if i+5 < len(content):
-            sual = content[i].strip()
-            variantlar = [content[i+j].strip() for j in range(1, 5)]
-            dogru = content[i+5].strip()
-            st.session_state.questions.append({
-                "sual": sual,
-                "variantlar": variantlar,
-                "dogru": dogru
-            })
+            st.session_state.cavablar[idx] = secim
 
-if st.session_state.questions and not st.session_state.exam_finished:
-    idx = st.session_state.current_question
-    sual_data = st.session_state.questions[idx]
+            col1, col2, col3 = st.columns(3)
 
-    st.subheader(f"Sual {idx+1}: {sual_data['sual']}")
+            if col1.button("⬅️ Geri qayıt", disabled=(idx == 0)):
+                st.session_state.current = max(0, idx - 1)
 
-    if idx not in st.session_state.shuffled_options:
-        shuffled = sual_data['variantlar'][:]
-        random.shuffle(shuffled)
-        st.session_state.shuffled_options[idx] = shuffled
+            if col2.button("✅ İmtahanı Bitir"):
+                st.session_state.imtahan_basladi = False
 
-    options = st.session_state.shuffled_options[idx]
-    selected_option = st.session_state.answers.get(idx)
-    selected = st.radio("Variantı seç:", options, index=options.index(selected_option) if selected_option in options else -1, key=f"q_{idx}")
-    st.session_state.answers[idx] = selected
+            if col3.button("➡️ Növbəti sual", disabled=(idx == len(st.session_state.suallar) - 1)):
+                st.session_state.current = min(len(st.session_state.suallar) - 1, idx + 1)
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("⬅️ Əvvəlki sual", disabled=idx == 0):
-            st.session_state.current_question -= 1
-    with col2:
-        if st.button("➡️ Növbəti sual", disabled=idx == len(st.session_state.questions) - 1):
-            st.session_state.current_question += 1
-    with col3:
-        if st.button("✅ İmtahanı bitir"):
-            st.session_state.exam_finished = True
+if "imtahan_basladi" in st.session_state and not st.session_state.imtahan_basladi:
+    suallar = st.session_state.suallar
+    cavablar = st.session_state.cavablar
+    duzgun = st.session_state.duzgun
 
-elif st.session_state.exam_finished:
-    st.success("✅ İmtahan bitdi!")
-    dogru_say = 0
-    for i, sual_data in enumerate(st.session_state.questions):
-        if st.session_state.answers.get(i) == sual_data["dogru"]:
-            dogru_say += 1
-    st.write(f"📊 Doğru cavab sayı: **{dogru_say} / {len(st.session_state.questions)}**")
-    st.write("🔁 Yenidən başlamaq üçün səhifəni yeniləyin.")
+    dogru_say = sum([1 for a, b in zip(cavablar, duzgun) if a == b])
+    st.success(f"✅ İmtahan bitdi! Nəticə: {dogru_say}/{len(suallar)} doğru cavab")
+
+    with st.expander("📋 Sual-sual nəticələrini göstər"):
+        for i, (user_ans, correct_ans, q) in enumerate(zip(cavablar, duzgun, suallar)):
+            sual_metni = q[0]
+            status = "✅ Düzgün" if user_ans == correct_ans else "❌ Səhv"
+            st.markdown(f"**{i+1}) {sual_metni}**\n\nSənin cavabın: `{user_ans}` — Doğru cavab: `{correct_ans}` → {status}")
+
+    if st.button("🔁 Yenidən başla"):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+        st.experimental_rerun()
